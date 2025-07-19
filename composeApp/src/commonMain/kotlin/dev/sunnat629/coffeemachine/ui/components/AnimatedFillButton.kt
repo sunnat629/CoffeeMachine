@@ -56,9 +56,14 @@ fun AnimatedFillButton(
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Background
+            // Background - changes color based on fill state
+            val backgroundColor = when (fillState) {
+                FillState.Filling -> CoffeeMachineColors.MachineBackground
+                FillState.Idle, FillState.Completed -> CoffeeMachineColors.SelectedGreen
+            }
+            
             drawRoundRect(
-                color = CoffeeMachineColors.MachineBackground,
+                color = backgroundColor,
                 size = size,
                 cornerRadius = CornerRadius(16.dp.toPx())
             )

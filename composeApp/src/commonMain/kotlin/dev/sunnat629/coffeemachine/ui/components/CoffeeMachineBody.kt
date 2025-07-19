@@ -45,7 +45,7 @@ fun CoffeeMachineBody(
             modifier = Modifier.fillMaxWidth()
         ) {
             // Control Panel
-            CoffeeMachineControlPanel()
+            CoffeeMachineControlPanel(isBrewingAnimationActive)
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -81,7 +81,20 @@ fun CoffeeMachineBody(
 }
 
 @Composable
-private fun CoffeeMachineControlPanel() {
+private fun CoffeeMachineControlPanel(isBrewingAnimationActive: Boolean = false) {
+    // Define colors based on machine state
+    val dialColor = if (isBrewingAnimationActive) {
+        CoffeeMachineColors.SelectedGreen
+    } else {
+        CoffeeMachineColors.MachineLightGray
+    }
+    
+    val buttonColor = if (isBrewingAnimationActive) {
+        CoffeeMachineColors.CoffeeLight
+    } else {
+        CoffeeMachineColors.MachineBackground
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -96,12 +109,12 @@ private fun CoffeeMachineControlPanel() {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Central Dial
+            // Central Dial - changes color when brewing
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        CoffeeMachineColors.MachineLightGray,
+                        dialColor,
                         CircleShape
                     )
                     .border(
@@ -113,7 +126,7 @@ private fun CoffeeMachineControlPanel() {
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Control Buttons
+            // Control Buttons - change color when brewing
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -122,7 +135,7 @@ private fun CoffeeMachineControlPanel() {
                         modifier = Modifier
                             .size(6.dp)
                             .background(
-                                CoffeeMachineColors.MachineBackground,
+                                buttonColor,
                                 CircleShape
                             )
                     )
@@ -139,7 +152,7 @@ private fun CoffeeSpotsWithBrewingAnimation(isBrewingAnimationActive: Boolean) {
         contentAlignment = Alignment.TopCenter
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             repeat(2) { index ->
                 Box(

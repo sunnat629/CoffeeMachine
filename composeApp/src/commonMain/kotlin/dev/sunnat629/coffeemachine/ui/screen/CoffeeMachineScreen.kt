@@ -10,6 +10,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sunnat629.coffeemachine.data.CupSize
+import dev.sunnat629.coffeemachine.data.FillState
 import dev.sunnat629.coffeemachine.ui.components.*
 import dev.sunnat629.coffeemachine.ui.theme.CoffeeMachineColors
 import dev.sunnat629.coffeemachine.viewmodel.CoffeeMachineViewModel
@@ -22,10 +23,10 @@ fun CoffeeMachineScreen(
 
     val sizeOptions = remember {
         listOf(
-            CupSize("Small", "Small", 0.7f),
-            CupSize("Medium", "Medium", 1.0f),
-            CupSize("Large", "Large", 1.3f),
-            CupSize("XLarge", "X-Large", 1.6f),
+            CupSize("Small", "Small", 1.0f),
+            CupSize("Medium", "Medium", 1.3f),
+            CupSize("Large", "Large", 1.6f),
+            CupSize("XLarge", "X-Large", 1.9f),
             CupSize("Custom", "Custom", 1.2f)
         )
     }
@@ -61,7 +62,7 @@ fun CoffeeMachineScreen(
                 // Machine Body
                 CoffeeMachineBody(
                     currentSize = currentSize,
-                    isBrewingAnimationActive = uiState.isBrewingAnimationActive
+                    isBrewingAnimationActive = uiState.isBrewingAnimationActive || uiState.fillState == FillState.Filling
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
