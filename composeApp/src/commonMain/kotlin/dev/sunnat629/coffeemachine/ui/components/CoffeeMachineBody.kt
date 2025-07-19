@@ -18,6 +18,8 @@ import dev.sunnat629.coffeemachine.ui.theme.CoffeeMachineColors
 fun CoffeeMachineBody(
     currentSize: CupSize,
     isBrewingAnimationActive: Boolean,
+    selectedDesign: Int,
+    onDesignChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Animated cup scale
@@ -54,14 +56,17 @@ fun CoffeeMachineBody(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Animated Cup
+            // Swipeable Cup with design patterns
             Box(
                 modifier = Modifier
                     .height(60.dp)
                     .scale(cupScale),
                 contentAlignment = Alignment.BottomCenter
             ) {
-                AnimatedCup()
+                SwipeableCup(
+                    selectedDesign = selectedDesign,
+                    onDesignChange = onDesignChange
+                )
             }
             
             Spacer(modifier = Modifier.height(16.dp))

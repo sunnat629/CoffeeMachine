@@ -16,22 +16,74 @@ class CoffeeMachineViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(CoffeeMachineUiState())
     val uiState: StateFlow<CoffeeMachineUiState> = _uiState.asStateFlow()
 
-    fun selectSize(sizeId: String) {
-        _uiState.value = _uiState.value.copy(selectedSize = sizeId)
+    // Cup prices based on size
+    private val cupPrices = mapOf(
+        "Small" to 2.5,
+        "Medium" to 3.0,
+        "Large" to 3.5,
+        "XLarge" to 4.0
+    )
+
+    private fun calculatePrice(size: String, quantity: Int): String {
+        val basePrice = cupPrices[size] ?: 3.0
+        val totalPrice = basePrice * quantity
+        return "€${totalPrice.toInt()}.${((totalPrice * 100).toInt() % 100).toString().padStart(2, '0')}"
     }
 
-    fun incrementQuantity() {
+    fun selectSize(sizeId: String) {
         _uiState.value = _uiState.value.copy(
-            quantity = _uiState.value.quantity + 1
+            selectedSize = sizeId,
+            price = calculatePrice(sizeId, _uiState.value.quantity)
         )
     }
 
-    fun decrementQuantity() {
-        if (_uiState.value.quantity > 1) {
+    fun selectCupDesign(designIndex: Int) {
+        _uiState.value = _uiState.value.copy(selectedCupDesign = designIndex)
+    }
+
+    fun incrementQuantity() {
+        // Only allow quantity changes in Idle state
+        if (_uiState.value.fillState == FillState.Idle) {
+            val newQuantity = _uiState.value.quantity + 1
             _uiState.value = _uiState.value.copy(
-                quantity = _uiState.value.quantity - 1
+                quantity = newQuantity,
+                price = calculatePrice(_uiState.value.selectedSize, newQuantity)
             )
         }
+    }
+
+    fun decrementQuantity() {
+        // Only allow quantity changes in Idle state
+        if (_uiState.value.fillState == FillState.Idle && _uiState.value.quantity > 1) {
+            val newQuantity = _uiState.value.quantity - 1
+            _uiState.value = _uiState.value.copy(
+                quantity = newQuantity,
+                price = calculatePrice(_uiState.value.selectedSize, newQuantity)
+            )
+        }
+    }
+
+    fun deleteOrder() {
+        // Reset to initial state when delete is pressed
+        _uiState.value = _uiState.value.copy(
+            fillState = FillState.Idle,
+            fillProgress = 0f,
+            quantity = 1,
+            price = calculatePrice(_uiState.value.selectedSize, 1)
+        )
+    }
+
+    fun addToCart() {
+        val currentCartQuantity = _uiState.value.cartQuantity
+        val addedQuantity = _uiState.value.quantity
+        _uiState.value = _uiState.value.copy(
+            cartQuantity = currentCartQuantity + addedQuantity,
+            // Reset to idle state after adding to cart
+            fillState = FillState.Idle,
+            fillProgress = 0f,
+            quantity = 1,
+            price = calculatePrice(_uiState.value.selectedSize, 1)
+        )
     }
 
     fun startFilling() {
@@ -51,12 +103,7 @@ class CoffeeMachineViewModel : ViewModel() {
                 isBrewingAnimationActive = false
             )
 
-            delay(500)
-
-            _uiState.value = _uiState.value.copy(
-                fillState = FillState.Idle,
-                fillProgress = 0f
-            )
+            // Don't automatically reset the state - user must press "ADD TO CART" or "Delete"
         }
     }
 

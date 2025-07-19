@@ -26,8 +26,7 @@ fun CoffeeMachineScreen(
             CupSize("Small", "Small", 1.0f),
             CupSize("Medium", "Medium", 1.3f),
             CupSize("Large", "Large", 1.6f),
-            CupSize("XLarge", "X-Large", 1.9f),
-            CupSize("Custom", "Custom", 1.2f)
+            CupSize("XLarge", "X-Large", 1.9f)
         )
     }
 
@@ -42,9 +41,9 @@ fun CoffeeMachineScreen(
     ) {
         // Header
         CoffeeMachineHeader(
-            title = "Caramel Frappuccino",
-            onBackClick = { /* Handle back navigation */ },
-            onDeleteClick = { /* Handle delete action */ }
+            title = "Sunnat629 Cafe",
+            cartQuantity = uiState.cartQuantity,
+            onCartClick = { /* Handle cart action */ }
         )
 
         // Coffee Machine
@@ -59,10 +58,12 @@ fun CoffeeMachineScreen(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
             ) {
-                // Machine Body
+                // Machine Body with Swipeable Cup
                 CoffeeMachineBody(
                     currentSize = currentSize,
-                    isBrewingAnimationActive = uiState.isBrewingAnimationActive || uiState.fillState == FillState.Filling
+                    isBrewingAnimationActive = uiState.isBrewingAnimationActive || uiState.fillState == FillState.Filling,
+                    selectedDesign = uiState.selectedCupDesign,
+                    onDesignChange = viewModel::selectCupDesign
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -101,9 +102,10 @@ fun CoffeeMachineScreen(
                 // Quantity Selector
                 QuantitySelector(
                     quantity = uiState.quantity,
-                    onIncrease = viewModel::incrementQuantity,
-                    onDecrease = viewModel::decrementQuantity,
-                    modifier = Modifier.fillMaxWidth()
+                    fillState = uiState.fillState,
+                    onIncrease = { viewModel.incrementQuantity() },
+                    onDecrease = { viewModel.decrementQuantity() },
+                    onDelete = { viewModel.deleteOrder() }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -112,7 +114,8 @@ fun CoffeeMachineScreen(
                 AnimatedFillButton(
                     fillProgress = uiState.fillProgress,
                     fillState = uiState.fillState,
-                    onFillClick = viewModel::startFilling
+                    onFillClick = { viewModel.startFilling() },
+                    onAddToCart = { viewModel.addToCart() }
                 )
             }
         }

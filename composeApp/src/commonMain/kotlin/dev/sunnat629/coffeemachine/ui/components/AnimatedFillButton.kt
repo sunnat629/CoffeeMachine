@@ -2,6 +2,7 @@ package dev.sunnat629.coffeemachine.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
@@ -29,10 +32,34 @@ fun AnimatedFillButton(
     fillProgress: Float,
     fillState: FillState,
     onFillClick: () -> Unit,
+    onAddToCart: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var waveTime by remember { mutableLongStateOf(0L) }
-    
+
+    // Pulsating animation for idle state to make button more prominent
+    val pulsateAnimation = rememberInfiniteTransition(label = "pulsate_animation")
+    val scale by pulsateAnimation.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "button_scale"
+    )
+
+    // Glow animation for idle state
+    val glowAlpha by pulsateAnimation.animateFloat(
+        initialValue = 0.0f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_alpha"
+    )
+
     // Wave animation for watery effect
     LaunchedEffect(fillState) {
         if (fillState == FillState.Filling) {
@@ -45,13 +72,32 @@ fun AnimatedFillButton(
             }
         }
     }
-    
+
+    // Apply scale animation only in idle state
+    val buttonScale = if (fillState == FillState.Idle) scale else 1.0f
+
+    // Determine if button should be enabled and what action to perform
+    val isEnabled = fillState != FillState.Filling
+    val buttonAction = when (fillState) {
+        FillState.Idle -> onFillClick
+        FillState.Completed -> onAddToCart
+        FillState.Filling -> { {} } // No action during filling
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = fillState == FillState.Idle) { onFillClick() }
+            .height(70.dp) // Slightly taller for more prominence
+            .shadow(
+                elevation = if (fillState == FillState.Idle || fillState == FillState.Completed) 8.dp else 4.dp,
+                shape = RoundedCornerShape(24.dp),
+                spotColor = CoffeeMachineColors.SelectedGreen
+            )
+            .scale(buttonScale) // Apply pulsating scale
+            .clip(RoundedCornerShape(24.dp)) // More rounded corners
+            .clickable(enabled = isEnabled) {
+                if (isEnabled) buttonAction()
+            }
     ) {
         Canvas(
             modifier = Modifier.fillMaxSize()
@@ -61,7 +107,7 @@ fun AnimatedFillButton(
                 FillState.Filling -> CoffeeMachineColors.MachineBackground
                 FillState.Idle, FillState.Completed -> CoffeeMachineColors.SelectedGreen
             }
-            
+
             drawRoundRect(
                 color = backgroundColor,
                 size = size,
@@ -74,27 +120,27 @@ fun AnimatedFillButton(
                 val waveAmplitude = 4.dp.toPx()
                 val waveFrequency = 0.01f
                 val timeOffset = waveTime * 0.005f
-                
+
                 // Create watery wave path
                 val wavePath = Path().apply {
                     moveTo(0f, 0f)
                     lineTo(fillWidth, 0f)
-                    
+
                     // Create wave effect on the right edge
                     for (y in 0..size.height.toInt() step 2) {
                         val waveX = fillWidth + sin((y * waveFrequency + timeOffset).toDouble()).toFloat() * waveAmplitude
                         lineTo(waveX, y.toFloat())
                     }
-                    
+
                     lineTo(0f, size.height)
                     close()
                 }
-                
+
                 drawPath(
                     path = wavePath,
                     color = CoffeeMachineColors.CoffeeDark
                 )
-                
+
                 // Add flowing liquid effect with gradient
                 val liquidGradient = Brush.horizontalGradient(
                     colors = listOf(
@@ -105,7 +151,7 @@ fun AnimatedFillButton(
                     startX = fillWidth - 100.dp.toPx(),
                     endX = fillWidth
                 )
-                
+
                 clipRect(right = fillWidth) {
                     drawRoundRect(
                         brush = liquidGradient,
@@ -129,7 +175,7 @@ fun AnimatedFillButton(
                         color = CoffeeMachineColors.CoffeeDarker.copy(alpha = 0.6f)
                     )
                 }
-                
+
                 // Add bubbles for liquid effect
                 if (fillState == FillState.Filling) {
                     repeat(5) { i ->
@@ -137,7 +183,7 @@ fun AnimatedFillButton(
                         val bubbleY = size.height * 0.3f + sin((timeOffset + i * 0.5f).toDouble()).toFloat() * 10.dp.toPx()
                         val bubbleRadius = (2 + i % 3).dp.toPx()
                         val bubbleAlpha = 0.3f + sin((timeOffset * 2f + i).toDouble()).toFloat() * 0.2f
-                        
+
                         drawCircle(
                             color = CoffeeMachineColors.SurfaceWhite.copy(alpha = bubbleAlpha.coerceIn(0.1f, 0.5f)),
                             radius = bubbleRadius,
@@ -148,7 +194,20 @@ fun AnimatedFillButton(
             }
         }
 
-        // Button Text with watery shimmer effect
+        // Add glow effect behind the button when idle or completed
+        if (fillState == FillState.Idle || fillState == FillState.Completed) {
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                drawCircle(
+                    color = CoffeeMachineColors.SelectedGreen.copy(alpha = glowAlpha),
+                    radius = size.width * 0.4f,
+                    center = Offset(size.width / 2, size.height / 2)
+                )
+            }
+        }
+
+        // Button Text with enhanced effects
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -164,17 +223,31 @@ fun AnimatedFillButton(
                 } else {
                     CoffeeMachineColors.SurfaceWhite
                 }
-                
-                Text(
-                    text = when (state) {
-                        FillState.Idle -> "Tap to fill"
-                        FillState.Filling -> "Filling your cup"
-                        FillState.Completed -> "Tap to fill"
-                    },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textColor
-                )
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = when (state) {
+                            FillState.Idle -> "TAP TO FILL"
+                            FillState.Filling -> "FILLING YOUR CUP"
+                            FillState.Completed -> "ADD TO CART"
+                        },
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = textColor
+                    )
+
+                    if (state == FillState.Idle) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Swipe cup to change design",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = CoffeeMachineColors.SurfaceWhite.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
         }
     }
